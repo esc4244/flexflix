@@ -314,4 +314,11 @@ footer {
   table.calendar td { height: 56px; font-size: 0.72rem; }
   iframe#formFrame { height: 1400px; }
   .whatsapp-btn { padding: 10px 14px; font-size: 0.78rem; }
-}ctrl:End
+}
+
+
+  .slot-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+
+.reserved-caption { display: block; font-size: 0.72rem; color: var(--red); font-weight: 700; line-height: 1.2; max-width: 220px; }
+
+table.week td .reserved-caption { font-size: 0.62rem; margin-top: 3px; max-width: 100px; }
