@@ -1,0 +1,41 @@
+:root{
+  --purple:#673ab7;
+  --purple-dark:#4b2c8a;
+  --available:#ffffff;
+  --reserved:#ffebee;
+}
+*{box-sizing:border-box;}
+body{font-family:Arial, Helvetica, sans-serif;margin:0;background:#f4f5f7;color:#222;}
+header{background:var(--purple);color:#fff;padding:24px 16px;text-align:center;}
+header h1{margin:0 0 8px;font-size:1.6rem;}
+header p{margin:0;font-size:0.95rem;opacity:0.9;}
+main{max-width:960px;margin:0 auto;padding:24px 16px 60px;}
+section{background:#fff;border-radius:10px;padding:20px;margin-bottom:28px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+h2{margin-top:0;color:var(--purple-dark);font-size:1.2rem;}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+.cal-header button{background:var(--purple);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:0.9rem;}
+.cal-header button:hover{background:var(--purple-dark);}
+.cal-header span{font-weight:bold;text-transform:capitalize;}
+table.calendar{width:100%;border-collapse:collapse;table-layout:fixed;}
+table.calendar th{padding:6px 0;font-size:0.8rem;color:#666;}
+table.calendar td{height:56px;text-align:center;vertical-align:middle;border:1px solid #eee;font-size:0.9rem;position:relative;}
+td.day{cursor:pointer;transition:background 0.15s;}
+td.day:hover{background:#f1eaff;}
+td.reserved{background:var(--reserved);color:#b71c1c;cursor:not-allowed;text-decoration:line-through;}
+td.selected{background:var(--purple);color:#fff;font-weight:bold;}
+td.empty{background:#fafafa;border:1px solid #f2f2f2;}
+td.past{color:#bbb;cursor:not-allowed;}
+.legend{display:flex;gap:16px;margin-top:12px;font-size:0.85rem;flex-wrap:wrap;}
+.legend span{display:inline-flex;align-items:center;gap:6px;}
+.swatch{width:14px;height:14px;border-radius:3px;display:inline-block;}
+.swatch.available{background:#fff;border:1px solid #ccc;}
+.swatch.reserved{background:var(--reserved);border:1px solid #e57373;}
+.swatch.selected{background:var(--purple);}
+#status{margin-top:12px;font-size:0.9rem;padding:10px;border-radius:6px;background:#f1eaff;color:#4b2c8a;display:none;}
+iframe{width:100%;border:none;height:1250px;}
+.loading{font-size:0.9rem;color:#666;}
+footer{text-align:center;font-size:0.8rem;color:#888;padding:20px;}
+@media (max-width:600px){
+  table.calendar td{height:42px;font-size:0.8rem;}
+  header h1{font-size:1.3rem;}
+}
