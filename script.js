@@ -1,6 +1,7 @@
 // FlexFlix 2026 - Calendario de reservas (hora Argentina)
 // Fuente de datos: hoja de Google Sheets publicada como CSV.
-// Cada "horario" = fecha + hora. Un horario ya reservado no puede volver a elegirse.
+// Cada "horario" = fecha + bloque horario. Un horario ya reservado no puede volver a elegirse.
+// Reservas disponibles solo de lunes a viernes.
 
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNCDg-VXEE-3ownBUr7ALGJiDSaobqGj1JYe9IOGUHh-dLjqQIySBIoT0EOiNjjCNbjI-opVdUgQvL/pub?gid=189689314&single=true&output=csv";
 const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLScVKS-JhuCPqBCEe5tbcb4PNtCaEh7aiwsvUoo6S9-4A-m4Gw/viewform";
@@ -9,14 +10,21 @@ const ENTRY_TIME = "entry.1806573509";
 const TIMEZONE = "America/Argentina/Buenos_Aires";
 const YEAR = 2026;
 
-const TIME_SLOTS = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
+// Bloques horarios de clase (hora Argentina). "start" es lo que se envia al formulario.
+const TIME_SLOTS = [
+  { start: "07:30", label: "07:30 a 09:00" },
+  { start: "09:00", label: "09:00 a 10:20" },
+  { start: "10:30", label: "10:30 a 11:50" },
+  { start: "12:00", label: "12:00 a 13:10" }
+];
+
 const DAY_NAMES = ["Dom","Lun","Mar","Mie","Jue","Vie","Sab"];
 const MONTH_NAMES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 let reservedSet = new Set();
 let currentView = "month";
 let currentMonth = { y: YEAR, m: 0 };
-let weekStartMs = null;
+let weekStartMs = null; // lunes de la semana actual
 let selectedDateIso = null;
 let pendingKey = null;
 
@@ -36,6 +44,16 @@ function argNowParts() {
 function dayKey(y, m, d) { return Date.UTC(y, m, d); }
 
 function isoOf(y, m, d) { return `${y}-${pad(m + 1)}-${pad(d)}`; }
+
+function weekdayOf(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(dayKey(y, m - 1, d)).getUTCDay(); // 0=Dom ... 6=Sab
+}
+
+function isBusinessDay(iso) {
+  const wd = weekdayOf(iso);
+  return wd >= 1 && wd <= 5;
+}
 
 function formatIsoHuman(iso) {
   const [y, m, d] = iso.split("-").map(Number);
@@ -106,11 +124,11 @@ async function loadReservations() {
   }
 }
 
-function isSlotAvailable(iso, time, todayIso, nowMinutes) {
-  const key = iso + "|" + time;
+function isSlotAvailable(iso, start, todayIso, nowMinutes) {
+  const key = iso + "|" + start;
   if (reservedSet.has(key)) return false;
   if (iso === todayIso) {
-    const [hh, mm] = time.split(":").map(Number);
+    const [hh, mm] = start.split(":").map(Number);
     if (hh * 60 + mm <= nowMinutes) return false;
   }
   return true;
@@ -154,11 +172,16 @@ function renderMonth() {
     const iso = isoOf(currentMonth.y, currentMonth.m, d);
     const td = document.createElement("td");
     const past = isPastDay(iso, todayIso);
-    const freeCount = TIME_SLOTS.filter(t => isSlotAvailable(iso, t, todayIso, nowMinutes)).length;
+    const businessDay = isBusinessDay(iso);
 
-    if (past) td.className = "past";
-    else if (freeCount === 0) td.className = "day-full";
-    else td.className = "day-available";
+    if (!businessDay) {
+      td.className = "weekend";
+    } else {
+      const freeCount = TIME_SLOTS.filter(t => isSlotAvailable(iso, t.start, todayIso, nowMinutes)).length;
+      if (past) td.className = "past";
+      else if (freeCount === 0) td.className = "day-full";
+      else td.className = "day-available";
+    }
 
     if (iso === todayIso) td.className += " today";
     if (iso === selectedDateIso) td.className += " selected-day";
@@ -170,10 +193,15 @@ function renderMonth() {
 
     const infoSpan = document.createElement("span");
     infoSpan.className = "day-info";
-    infoSpan.textContent = past ? "Pasado" : (freeCount === 0 ? "Completo" : `${freeCount}/${TIME_SLOTS.length} libres`);
+    if (!businessDay) {
+      infoSpan.textContent = "No habil";
+    } else {
+      const freeCount = TIME_SLOTS.filter(t => isSlotAvailable(iso, t.start, todayIso, nowMinutes)).length;
+      infoSpan.textContent = past ? "Pasado" : (freeCount === 0 ? "Completo" : `${freeCount}/${TIME_SLOTS.length} libres`);
+    }
     td.appendChild(infoSpan);
 
-    if (!past) {
+    if (businessDay && !past) {
       td.addEventListener("click", () => {
         selectedDateIso = iso;
         renderMonth();
@@ -196,10 +224,11 @@ function renderMonth() {
   if (row.children.length) tbody.appendChild(row);
 }
 
-function startOfWeekMs(ms) {
+function startOfWeekMondayMs(ms) {
   const dt = new Date(ms);
-  const weekday = dt.getUTCDay();
-  return ms - weekday * 86400000;
+  const weekday = dt.getUTCDay(); // 0=Dom
+  const diff = weekday === 0 ? 6 : weekday - 1; // dias desde el lunes
+  return ms - diff * 86400000;
 }
 
 function renderWeek() {
@@ -213,17 +242,17 @@ function renderWeek() {
   const nowMinutes = hh * 60 + mm;
 
   if (weekStartMs === null) {
-    weekStartMs = startOfWeekMs(dayKey(y, m, todayD));
+    weekStartMs = startOfWeekMondayMs(dayKey(y, m, todayD));
   }
 
   const days = [];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 5; i++) { // Lunes a viernes
     const ms = weekStartMs + i * 86400000;
     const dt = new Date(ms);
     days.push({ y: dt.getUTCFullYear(), m: dt.getUTCMonth(), d: dt.getUTCDate(), iso: isoOf(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate()) });
   }
 
-  const first = days[0], last = days[6];
+  const first = days[0], last = days[4];
   document.getElementById("weekLabel").textContent =
     `${pad(first.d)}/${pad(first.m + 1)} - ${pad(last.d)}/${pad(last.m + 1)}/${last.y}`;
 
@@ -234,25 +263,25 @@ function renderWeek() {
   headRow.appendChild(document.createElement("th"));
   days.forEach((day, idx) => {
     const th = document.createElement("th");
-    th.textContent = `${DAY_NAMES[idx]} ${pad(day.d)}/${pad(day.m + 1)}`;
+    th.textContent = `${DAY_NAMES[idx + 1]} ${pad(day.d)}/${pad(day.m + 1)}`;
     headRow.appendChild(th);
   });
   thead.appendChild(headRow);
   table.appendChild(thead);
 
   const tbody = document.createElement("tbody");
-  TIME_SLOTS.forEach(time => {
+  TIME_SLOTS.forEach(slot => {
     const tr = document.createElement("tr");
     const th = document.createElement("th");
-    th.textContent = time;
+    th.textContent = slot.label;
     tr.appendChild(th);
     days.forEach(day => {
       const td = document.createElement("td");
       const past = isPastDay(day.iso, todayIso) || (day.iso === todayIso && (() => {
-        const [hh2, mm2] = time.split(":").map(Number);
+        const [hh2, mm2] = slot.start.split(":").map(Number);
         return hh2 * 60 + mm2 <= nowMinutes;
       })());
-      const key = day.iso + "|" + time;
+      const key = day.iso + "|" + slot.start;
       const reserved = reservedSet.has(key);
       const btn = document.createElement("button");
       btn.type = "button";
@@ -260,12 +289,12 @@ function renderWeek() {
       if (past) { btn.classList.add("past"); btn.disabled = true; btn.textContent = "-"; }
       else if (reserved) {
         btn.classList.add("reserved");
-        btn.textContent = "Reservado";
-        btn.addEventListener("click", () => showSorry(day.iso, time));
+        btn.textContent = "No disponible";
+        btn.addEventListener("click", () => showSorry(day.iso, slot));
       } else {
         if (pendingKey === key) btn.classList.add("selected");
         btn.textContent = "Disponible";
-        btn.addEventListener("click", () => attemptReserve(day.iso, time));
+        btn.addEventListener("click", () => attemptReserve(day.iso, slot));
       }
       td.appendChild(btn);
       tr.appendChild(td);
@@ -286,59 +315,67 @@ function renderDaySlots(iso) {
 
   const container = document.getElementById("daySlots");
   container.innerHTML = "";
+
+  if (!isBusinessDay(iso)) {
+    const p = document.createElement("p");
+    p.textContent = "Los fines de semana no hay reservas disponibles. Elegi un dia de lunes a viernes.";
+    container.appendChild(p);
+    return;
+  }
+
   const h3 = document.createElement("h3");
   h3.textContent = `Horarios para el ${formatIsoHuman(iso)} (hora Argentina)`;
   container.appendChild(h3);
 
   const list = document.createElement("div");
   list.className = "slots-list";
-  TIME_SLOTS.forEach(time => {
-    const key = iso + "|" + time;
+  TIME_SLOTS.forEach(slot => {
+    const key = iso + "|" + slot.start;
     const reserved = reservedSet.has(key);
     const past = isPastDay(iso, todayIso) || (iso === todayIso && (() => {
-      const [hh2, mm2] = time.split(":").map(Number);
+      const [hh2, mm2] = slot.start.split(":").map(Number);
       return hh2 * 60 + mm2 <= nowMinutes;
     })());
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "slot-btn";
-    if (past) { btn.classList.add("past"); btn.disabled = true; btn.textContent = time + " - pasado"; }
+    if (past) { btn.classList.add("past"); btn.disabled = true; btn.textContent = slot.label + " - pasado"; }
     else if (reserved) {
       btn.classList.add("reserved");
-      btn.textContent = time + " - reservado";
-      btn.addEventListener("click", () => showSorry(iso, time));
+      btn.textContent = slot.label + " - no disponible";
+      btn.addEventListener("click", () => showSorry(iso, slot));
     } else {
       if (pendingKey === key) btn.classList.add("selected");
-      btn.textContent = time + " - disponible";
-      btn.addEventListener("click", () => attemptReserve(iso, time));
+      btn.textContent = slot.label + " - disponible";
+      btn.addEventListener("click", () => attemptReserve(iso, slot));
     }
     list.appendChild(btn);
   });
   container.appendChild(list);
 }
 
-function showSorry(iso, time) {
+function showSorry(iso, slot) {
   const status = document.getElementById("status");
   status.className = "error";
-  status.textContent = `Lo siento, el horario ${time} hs del ${formatIsoHuman(iso)} ya fue reservado. Por favor elegí otro horario disponible.`;
+  status.textContent = `Lo siento, el horario ${slot.label} del ${formatIsoHuman(iso)} ya fue reservado (no disponible). Por favor elegi otro horario disponible.`;
   status.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-async function attemptReserve(iso, time) {
+async function attemptReserve(iso, slot) {
   await loadReservations();
-  const key = iso + "|" + time;
+  const key = iso + "|" + slot.start;
   if (reservedSet.has(key)) {
-    showSorry(iso, time);
+    showSorry(iso, slot);
     if (selectedDateIso) renderDaySlots(selectedDateIso);
     renderCurrentView();
     return;
   }
   pendingKey = key;
   const iframe = document.getElementById("formFrame");
-  iframe.src = `${FORM_BASE}?embedded=true&${ENTRY_DATE}=${iso}&${ENTRY_TIME}=${time}`;
+  iframe.src = `${FORM_BASE}?embedded=true&${ENTRY_DATE}=${iso}&${ENTRY_TIME}=${slot.start}`;
   const status = document.getElementById("status");
   status.className = "success";
-  status.textContent = `Horario seleccionado: ${time} hs del ${formatIsoHuman(iso)} (hora Argentina). Completá tus datos en el formulario de abajo para confirmar la reserva.`;
+  status.textContent = `Horario seleccionado: ${slot.label} del ${formatIsoHuman(iso)} (hora Argentina). Completa tus datos en el formulario de abajo para confirmar la reserva.`;
   if (selectedDateIso) renderDaySlots(selectedDateIso);
   renderCurrentView();
   iframe.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -347,8 +384,6 @@ async function attemptReserve(iso, time) {
 function checkPendingConflict() {
   if (!pendingKey) return;
   if (reservedSet.has(pendingKey)) {
-    // Puede ser que el propio usuario ya haya confirmado su reserva; no mostramos error aqui.
-    // Se limpia el estado pendiente para evitar falsos positivos futuros.
     pendingKey = null;
   }
 }
@@ -389,13 +424,13 @@ function initNav() {
     renderMonth();
   });
   document.getElementById("prevWeek").addEventListener("click", () => {
-    const minWs = startOfWeekMs(dayKey(YEAR, 0, 1));
+    const minWs = startOfWeekMondayMs(dayKey(YEAR, 0, 1));
     const next = weekStartMs - 7 * 86400000;
     weekStartMs = next < minWs ? minWs : next;
     renderWeek();
   });
   document.getElementById("nextWeek").addEventListener("click", () => {
-    const maxWs = startOfWeekMs(dayKey(YEAR, 11, 31));
+    const maxWs = startOfWeekMondayMs(dayKey(YEAR, 11, 31));
     const next = weekStartMs + 7 * 86400000;
     weekStartMs = next > maxWs ? maxWs : next;
     renderWeek();
