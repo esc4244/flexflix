@@ -22,6 +22,7 @@ const DAY_NAMES = ["Dom","Lun","Mar","Mie","Jue","Vie","Sab"];
 const MONTH_NAMES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 let reservedSet = new Set();
+let reservedInfo = new Map(); // key "iso|time" -> { nombre, materia, curso }
 let currentView = "month";
 let currentMonth = { y: YEAR, m: 0 };
 let weekStartMs = null; // lunes de la semana actual
@@ -104,12 +105,22 @@ async function loadReservations() {
     const rows = parseCSV(text).filter(r => r.length > 1);
     rows.shift(); // header
     const set = new Set();
+    const info = new Map();
     rows.forEach(r => {
       const iso = normalizeDateDMY(r[5]);
       const time = normalizeTime(r[6]);
-      if (iso && time) set.add(iso + "|" + time);
+      if (iso && time) {
+        const key = iso + "|" + time;
+        set.add(key);
+        info.set(key, {
+          nombre: (r[1] || "").trim(),
+          materia: (r[2] || "").trim(),
+          curso: (r[3] || "").trim()
+        });
+      }
     });
     reservedSet = set;
+    reservedInfo = info;
     const loadingMsg = document.getElementById("loadingMsg");
     if (loadingMsg) loadingMsg.style.display = "none";
     renderCurrentView();
@@ -297,6 +308,15 @@ function renderWeek() {
         btn.addEventListener("click", () => attemptReserve(day.iso, slot));
       }
       td.appendChild(btn);
+      if (reserved) {
+        const info = reservedInfo.get(key);
+        if (info) {
+          const cap = document.createElement("span");
+          cap.className = "reserved-caption";
+          cap.textContent = `${info.nombre || "Docente s/d"} - ${info.curso || "Curso s/d"}`;
+          td.appendChild(cap);
+        }
+      }
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
@@ -336,6 +356,8 @@ function renderDaySlots(iso) {
       const [hh2, mm2] = slot.start.split(":").map(Number);
       return hh2 * 60 + mm2 <= nowMinutes;
     })());
+    const wrap = document.createElement("div");
+    wrap.className = "slot-wrap";
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "slot-btn";
@@ -349,7 +371,19 @@ function renderDaySlots(iso) {
       btn.textContent = slot.label + " - disponible";
       btn.addEventListener("click", () => attemptReserve(iso, slot));
     }
-    list.appendChild(btn);
+    wrap.appendChild(btn);
+    if (reserved) {
+      const info = reservedInfo.get(key);
+      const cap = document.createElement("span");
+      cap.className = "reserved-caption";
+      if (info) {
+        cap.textContent = `Reservado por: ${info.nombre || "Docente s/d"} - ${info.materia ? info.materia + " - " : ""}${info.curso || "Curso s/d"}`;
+      } else {
+        cap.textContent = "Reservado";
+      }
+      wrap.appendChild(cap);
+    }
+    list.appendChild(wrap);
   });
   container.appendChild(list);
 }
@@ -357,7 +391,12 @@ function renderDaySlots(iso) {
 function showSorry(iso, slot) {
   const status = document.getElementById("status");
   status.className = "error";
-  status.textContent = `Lo siento, el horario ${slot.label} del ${formatIsoHuman(iso)} ya fue reservado (no disponible). Por favor elegi otro horario disponible.`;
+  const info = reservedInfo.get(iso + "|" + slot.start);
+  let detail = "";
+  if (info) {
+    detail = ` Reservado por ${info.nombre || "docente s/d"}${info.curso ? " (" + info.curso + ")" : ""}.`;
+  }
+  status.textContent = `Lo siento, el horario ${slot.label} del ${formatIsoHuman(iso)} ya fue reservado (no disponible).${detail} Por favor elegi otro horario disponible.`;
   status.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
