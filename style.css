@@ -18,22 +18,67 @@ body {
   margin: 0;
   background: #faf8fc;
   color: var(--text);
+  padding-top: 96px; /* deja lugar para el header fijo */
 }
 
-header {
+header.site-header {
   background: var(--purple);
   color: #fff;
-  padding: 24px 16px;
-  text-align: center;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
-header h1 { margin: 0 0 8px 0; font-size: 1.6rem; }
-header p { margin: 0; opacity: 0.9; }
+.school-logo {
+  height: 64px;
+  width: 64px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.header-text h1 {
+  margin: 0 0 4px 0;
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
+.header-text p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.85rem;
+}
+
+.whatsapp-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 600;
+  background: #25d366;
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 18px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+.whatsapp-btn:hover { background: #1ebe5b; }
 
 main {
   max-width: 900px;
   margin: 0 auto;
-  padding: 24px 16px 60px 16px;
+  padding: 24px 16px 100px 16px;
 }
 
 section {
@@ -123,6 +168,7 @@ table.calendar td {
 
 table.calendar td.empty { background: #fbfbfb; cursor: default; }
 table.calendar td.past { background: var(--grey-bg); color: var(--grey); cursor: not-allowed; }
+table.calendar td.weekend { background: #ececec; color: var(--grey); cursor: not-allowed; }
 table.calendar td.day-available:hover { background: var(--green-bg); }
 table.calendar td.day-full { background: var(--red-bg); color: var(--red); }
 table.calendar td.selected-day { outline: 3px solid var(--purple); }
@@ -162,8 +208,8 @@ table.week th { background: var(--purple-light); color: var(--purple-dark); }
 .slot-btn.reserved {
   background: var(--red-bg);
   color: var(--red);
-  cursor: not-allowed;
-  text-decoration: line-through;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .slot-btn.past {
@@ -198,6 +244,7 @@ table.week th { background: var(--purple-light); color: var(--purple-dark); }
 .swatch.reserved { background: var(--red-bg); border: 1px solid var(--red); }
 .swatch.selected { background: var(--purple); }
 .swatch.past { background: var(--grey-bg); border: 1px solid var(--grey); }
+.swatch.weekend { background: #ececec; border: 1px solid var(--grey); }
 
 #daySlots {
   margin-top: 16px;
@@ -259,7 +306,12 @@ footer {
 }
 
 @media (max-width: 600px) {
+  body { padding-top: 120px; }
+  header.site-header { flex-direction: row; padding: 8px 12px; }
+  .school-logo { height: 48px; width: 48px; }
+  .header-text h1 { font-size: 1.05rem; }
+  .header-text p { font-size: 0.72rem; }
   table.calendar td { height: 56px; font-size: 0.72rem; }
-  header h1 { font-size: 1.3rem; }
   iframe#formFrame { height: 1400px; }
-}
+  .whatsapp-btn { padding: 10px 14px; font-size: 0.78rem; }
+}ctrl:End
