@@ -7,13 +7,21 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
+<header class="site-header">
+<img src="logo.png" alt="Logo de la escuela" class="school-logo">
+<div class="header-text">
 <h1>Anotacion de Clases &mdash; Plataforma FlexFlix 2026</h1>
-<p>Elegi un horario disponible en el calendario (hora Argentina) y luego completa el formulario. Cada horario (fecha + hora) admite una sola reserva.</p>
+<p>Elegi un horario disponible en el calendario (hora Argentina) y luego completa el formulario. Cada horario (fecha + bloque) admite una sola reserva. Reservas de lunes a viernes.</p>
+</div>
 </header>
+
+<a class="whatsapp-btn" href="https://wa.me/5491168595121" target="_blank" rel="noopener noreferrer">
+WhatsApp: dudas de logueo de usuario
+</a>
+
 <main>
 <section id="calendario-section">
-<h2>Calendario de reservas (hora Argentina)</h2>
+<h2>Calendario de reservas (hora Argentina, lunes a viernes)</h2>
 <p class="loading" id="loadingMsg">Cargando reservas desde Google Sheets...</p>
 
 <div class="view-toggle">
@@ -44,9 +52,10 @@
 
 <div class="legend">
 <span><i class="swatch available"></i> Disponible</span>
-<span><i class="swatch reserved"></i> Reservado</span>
+<span><i class="swatch reserved"></i> No disponible (reservado)</span>
 <span><i class="swatch selected"></i> Seleccionado</span>
 <span><i class="swatch past"></i> Pasado</span>
+<span><i class="swatch weekend"></i> Fin de semana</span>
 </div>
 
 <div id="daySlots"></div>
@@ -59,7 +68,7 @@
 <iframe id="formFrame" src="https://docs.google.com/forms/d/e/1FAIpQLScVKS-JhuCPqBCEe5tbcb4PNtCaEh7aiwsvUoo6S9-4A-m4Gw/viewform?embedded=true" title="Formulario de reserva FlexFlix">Cargando...</iframe>
 </section>
 </main>
-<footer>FlexFlix 2026 &middot; Cronograma 2026 &middot; Hora Argentina (America/Argentina/Buenos_Aires)</footer>
+<footer>FlexFlix 2026 &middot; Cronograma 2026 &middot; Hora Argentina (America/Argentina/Buenos_Aires) &middot; Dudas de logueo: WhatsApp +54 9 11 6859-5121</footer>
 <script src="script.js"></script>
 </body>
 </html>
