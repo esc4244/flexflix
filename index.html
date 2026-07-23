@@ -8,38 +8,58 @@
 </head>
 <body>
 <header>
-  <h1>Anotacion de Clases &mdash; Plataforma FlexFlix 2026</h1>
-  <p>Elegi una fecha disponible en el calendario y luego completa el formulario. Cada fecha admite una sola reserva.</p>
+<h1>Anotacion de Clases &mdash; Plataforma FlexFlix 2026</h1>
+<p>Elegi un horario disponible en el calendario (hora Argentina) y luego completa el formulario. Cada horario (fecha + hora) admite una sola reserva.</p>
 </header>
 <main>
-  <section id="calendario-section">
-    <h2>Calendario de reservas</h2>
-    <p class="loading" id="loadingMsg">Cargando reservas desde Google Sheets...</p>
-    <div class="cal-header">
-      <button id="prevMonth" type="button">&larr; Mes anterior</button>
-      <span id="monthLabel"></span>
-      <button id="nextMonth" type="button">Mes siguiente &rarr;</button>
-    </div>
-    <table class="calendar">
-      <thead>
-        <tr><th>Dom</th><th>Lun</th><th>Mar</th><th>Mie</th><th>Jue</th><th>Vie</th><th>Sab</th></tr>
-      </thead>
-      <tbody id="calendarBody"></tbody>
-    </table>
-    <div class="legend">
-      <span><i class="swatch available"></i> Disponible</span>
-      <span><i class="swatch reserved"></i> Reservado</span>
-      <span><i class="swatch selected"></i> Seleccionada</span>
-    </div>
-    <div id="status"></div>
-  </section>
+<section id="calendario-section">
+<h2>Calendario de reservas (hora Argentina)</h2>
+<p class="loading" id="loadingMsg">Cargando reservas desde Google Sheets...</p>
 
-  <section id="form-section">
-    <h2>Formulario de reserva</h2>
-    <iframe id="formFrame" src="https://docs.google.com/forms/d/e/1FAIpQLScVKS-JhuCPqBCEe5tbcb4PNtCaEh7aiwsvUoo6S9-4A-m4Gw/viewform?embedded=true" title="Formulario de reserva FlexFlix">Cargando...</iframe>
-  </section>
+<div class="view-toggle">
+<button id="viewMonthBtn" type="button" class="view-btn active">Vista mensual</button>
+<button id="viewWeekBtn" type="button" class="view-btn">Vista semanal</button>
+</div>
+
+<div class="cal-header" id="monthNav">
+<button id="prevMonth" type="button">&larr; Mes anterior</button>
+<span id="monthLabel"></span>
+<button id="nextMonth" type="button">Mes siguiente &rarr;</button>
+</div>
+
+<div class="cal-header" id="weekNav" style="display:none">
+<button id="prevWeek" type="button">&larr; Semana anterior</button>
+<span id="weekLabel"></span>
+<button id="nextWeek" type="button">Semana siguiente &rarr;</button>
+</div>
+
+<table class="calendar" id="monthTable">
+<thead>
+<tr><th>Dom</th><th>Lun</th><th>Mar</th><th>Mie</th><th>Jue</th><th>Vie</th><th>Sab</th></tr>
+</thead>
+<tbody id="calendarBody"></tbody>
+</table>
+
+<div id="weekGrid" style="display:none"></div>
+
+<div class="legend">
+<span><i class="swatch available"></i> Disponible</span>
+<span><i class="swatch reserved"></i> Reservado</span>
+<span><i class="swatch selected"></i> Seleccionado</span>
+<span><i class="swatch past"></i> Pasado</span>
+</div>
+
+<div id="daySlots"></div>
+
+<div id="status"></div>
+</section>
+
+<section id="form-section">
+<h2>Formulario de reserva</h2>
+<iframe id="formFrame" src="https://docs.google.com/forms/d/e/1FAIpQLScVKS-JhuCPqBCEe5tbcb4PNtCaEh7aiwsvUoo6S9-4A-m4Gw/viewform?embedded=true" title="Formulario de reserva FlexFlix">Cargando...</iframe>
+</section>
 </main>
-<footer>FlexFlix 2026 &middot; Cronograma Junio 2026</footer>
+<footer>FlexFlix 2026 &middot; Cronograma 2026 &middot; Hora Argentina (America/Argentina/Buenos_Aires)</footer>
 <script src="script.js"></script>
 </body>
 </html>
